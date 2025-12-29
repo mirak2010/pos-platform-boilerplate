@@ -1,30 +1,39 @@
-import '../css/main.scss';
-import React from 'react';
-import ReactDOM from 'react-dom';
+// This event triggers when the waiter clicks "Pay" on the tablet
+poster.on('beforeOrderClose', (result) => {
+    return new Promise((resolve, reject) => {
+        // 1. Create a prompt for the scan (or show a custom modal)
+        const token = prompt("Scan Customer Card/QR Token:");
 
-import HelloWorldApp from '../../examples/hello-world/app';
-import LoyaltyApp from '../../examples/loyalty/app';
-import TextPrintApp from '../../examples/text-print/app';
-import PmsApp from '../../examples/pms/App';
-import BankIntegrationApp from '../../examples/bank-integration/app';
+        if (!token) {
+            poster.interface.showAlert('Cancelled', 'No token scanned.');
+            return reject();
+        }
 
-class ExampleApp extends React.Component {
-    render() {
-        // Чтобы отобразить нужный пример, просто закомментируйте не нужные компоненты
-
-        return <HelloWorldApp />;
-
-        return <LoyaltyApp />;
-
-        return <TextPrintApp />;
-
-        return <PmsApp />;
-
-        return <BankIntegrationApp />;
-    }
-}
-
-ReactDOM.render(
-    <ExampleApp />,
-    document.getElementById('app-container'),
-);
+        // 2. Send the scan data to your Make.com Webhook
+        fetch('https://hook.make.com/YOUR_MAKE_WEBHOOK_URL', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: token,
+                amount: result.order.payed_sum,
+                transaction_id: result.order.id,
+                spot_id: result.order.spot_id
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                poster.interface.showAlert('Success', 'Payment accepted by Payme');
+                // 3. This tells Poster it's safe to close the order
+                resolve(); 
+            } else {
+                poster.interface.showAlert('Error', data.message || 'Payment failed');
+                reject();
+            }
+        })
+        .catch(() => {
+            poster.interface.showAlert('Connection Error', 'Check internet/Make.com');
+            reject();
+        });
+    });
+});
