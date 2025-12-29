@@ -10,7 +10,7 @@ poster.on('beforeOrderClose', (result) => {
         }
 
         // 2. Send the scan data to your Make.com Webhook
-        fetch('https://hook.make.com/YOUR_MAKE_WEBHOOK_URL', {
+        fetch('https://hook.us2.make.com/m9ql0nw5yn8qk1x7lsm29n9psabtqgep', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
